@@ -1,6 +1,7 @@
 import joblib
 import pandas as pd
 import numpy as np
+import math
 from data_loader import MODELS_DIR, CONFIG_FILES_DIR
 from features import MarketDemandModel_data_transformation
 from src.config import tick_size
@@ -48,7 +49,7 @@ class MarketDemandModel:
 
         predictions = np.round(self.model.predict(X_today))
 
-        predictions = np.clip(predictions, a_min=0, a_max=None)
+        predictions = np.expm1(np.clip(predictions, a_min=0, a_max=None)) - 1
 
         output = pd.Series(predictions, index=raw_stockcodes.values)
 
