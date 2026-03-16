@@ -82,10 +82,13 @@ if st.button('Generate Forecast', type='primary'):
 
         if df is not None and not df.empty:
 
+            df = df.astype(str)
+
             required_cols = ['forecast_from', 'forecast_to', 'StockCode']
             if all(col in df.columns for col in required_cols):
                 df.set_index(required_cols, inplace=True)
 
-            st.dataframe(df.astype(str), use_container_width=True)
+
+            st.dataframe(df, use_container_width=True)
 
 
