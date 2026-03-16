@@ -19,6 +19,7 @@ max_date_obj = pd.to_datetime(config.max_date).date()
 date_col = st.columns(1)[0]
 with date_col:
     user_date_input = st.date_input('Input current date YYYY-MM-DD',
+                                    value = max_date_obj,
                                     min_value= min_date_obj,
                                     max_value=max_date_obj)
     api_date_str = f'{user_date_input} 00:00:00'
