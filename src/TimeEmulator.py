@@ -1,68 +1,68 @@
-import config
-from data_loader import MODELS_DIR, CONFIG_FILES_DIR
-from src.config import start_date, tick_size
-from src.ModelClasses import MarketDemandModel
 import pandas as pd
-import datetime
+from src.data_loader import MODELS_DIR
+from src.ModelClasses import MarketDemandModel
+
 
 class TimeEmulator:
-    def __init__(self, start_date = start_date, df = None):
+    """Simulates real-time forecasting operations across historical timelines"""
+
+    def __init__(self, start_date='2011-09-08', df=None):
+        """
+        Initializes TimeEmulator by setting start_date as a current time and T-period in forecasting
+                Args:
+                    start_date: Date set as a current date for making future predictions
+                    df: DataFrame containing the complete dataset. If None cold start
+        """
 
         self.df = df
 
-        df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
+        self.df['InvoiceDate'] = pd.to_datetime(self.df['InvoiceDate'])
+        self.start_date = pd.to_datetime(start_date)
 
-        if start_date:
-            self.current_datetime = pd.to_datetime(start_date)
-        elif df is not None:
-            self.current_datetime = df['InvoiceDate'].min()
-        else:
-            self.current_datetime = pd.to_datetime(start_date)
-
-        self.history = []
+        self.history_df = self.df[self.df['InvoiceDate'] <= self.start_date]
 
         self.demand_predictor = MarketDemandModel(
             MODELS_DIR / 'MarketDemandModel.joblib',
-            CONFIG_FILES_DIR / 'MarketDemandModelEncoder.joblib',
-            history_df = df[df['InvoiceDate'] < self.current_datetime]
+            history_df=self.history_df
         )
 
-        self.current_tick_data = df[df['InvoiceDate'] == self.current_datetime]
+    def generate_forecast(self, n_ticks : int , tick_size):
+        """
+        Function is forming final DataFrame to show user a forecasting result
 
-    def emulate_time_change(self, n_ticks, tick_size):
+            Args:
+                n_ticks: Number of ticks to make forecast
+                tick_size: Sample size for single-tick forecast
+
+            Returns:
+                full_forecast: Ready to show concatenated DataFrame containing all needed forecasts
+        """
+
         all_predictions = []
 
-        for _ in range(n_ticks):
-            print(f'Current date:{self.current_datetime}')
-            self.history.append(self.current_datetime)
-            self.current_datetime += tick_size
+        for step in range(1, n_ticks + 1):
 
-            daily_prediction = self._on_tick()
+            target_forecast_date = self.start_date + (tick_size * step)
 
-            if not daily_prediction.empty:
+            demand_prediction, optimal_prices_series = self.demand_predictor.predict_future_target(
+                target_date=target_forecast_date
+            )
+
+            if not demand_prediction.empty:
+
+                qty_array = demand_prediction.values
+
                 daily_df = pd.DataFrame({
-                    'forecast_date': self.current_datetime,
-                    'StockCode': daily_prediction.index,
-                    'predicted_quantity': daily_prediction.values
+                    'forecast_from': [(target_forecast_date - tick_size).strftime('%Y-%m-%d')] * len(qty_array),
+                    'forecast_to': [target_forecast_date.strftime('%Y-%m-%d')] * len(qty_array),
+                    'StockCode': demand_prediction.index,
+                    'predicted_quantity': demand_prediction.clip(lower=0).values,
+                    'optimal_price': optimal_prices_series.clip(lower=0.1).values,
                 })
                 all_predictions.append(daily_df)
 
         if all_predictions:
             full_forecast = pd.concat(all_predictions, ignore_index=True)
-            full_forecast.set_index('forecast_date', inplace=True)
             return full_forecast
-        else:
-            return pd.DataFrame()
 
-
-    def _on_tick(self):
-
-        previous_time = self.current_datetime - pd.Timedelta(config.tick_size)
-
-        new_sales_data = self.df[
-            (self.df['InvoiceDate'] > previous_time) &
-            (self.df['InvoiceDate'] <= self.current_datetime)
-            ]
-
-        MD_prediction = self.demand_predictor.predict_next_tick(new_sales_data)
-        return MD_prediction
+        return pd.DataFrame()

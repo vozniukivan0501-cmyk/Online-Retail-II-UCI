@@ -1,17 +1,39 @@
 import pandas as pd
-import src.config as config
-from TimeEmulator import TimeEmulator
-from data_loader import IPC_PATH
-
-from data_loader import PROCESSED_DATA_DIR
+from src.TimeEmulator import TimeEmulator
+from datetime import timedelta
 
 
-def run_demand_forecast(df = pd.read_parquet(PROCESSED_DATA_DIR/ 'online_retail.parquet'), n_ticks=1):
+from src.data_loader import PROCESSED_DATA_DIR
 
-    MD_Emulator = TimeEmulator(
-        start_date = config.start_date,
+
+def run_demand_forecast(df = None,
+                        n_ticks = 7,
+                        start_date = "2011-09-08",
+                        tick_size = 1):
+    """
+    Orchestrates the market demand forecasting pipeline to generate a final prediction over a specified time horizon.
+
+        Args:
+            df: DataFrame containing the complete dataset. If None, loads the default processed parquet file.
+            n_ticks: The number of future time steps to forecast.
+            start_date: The chronological starting point for the forecast engine (YYYY-MM-DD).
+            tick_size: The duration of each forecast step in days.
+
+        Returns:
+            forecast_df: DataFrame containing the predicted sales quantities and optimal prices.
+    """
+
+    if df is None:
+        df = pd.read_parquet(PROCESSED_DATA_DIR / 'online_retail.parquet')
+
+    actual_time_delta = timedelta(days=1) * tick_size
+
+    md_emulator = TimeEmulator(
+        start_date = start_date,
         df = df
     )
 
-    prediction = MD_Emulator.emulate_time_change(n_ticks, tick_size=config.tick_size)
-    prediction.to_parquet(IPC_PATH / 'MD_prediction_buffer.parquet')
+    forecast_df = md_emulator.generate_forecast(n_ticks, actual_time_delta)
+
+
+    return forecast_df

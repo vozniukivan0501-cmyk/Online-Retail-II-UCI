@@ -1,0 +1,11 @@
+pandas
+numpy
+fastapi
+pydantic
+streamlit
+requests
+pyarrow
+holidays
+joblib
+lightgbm
+uvicorn

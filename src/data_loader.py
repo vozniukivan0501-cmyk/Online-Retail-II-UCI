@@ -7,11 +7,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 RAW_DATA_DIR = BASE_DIR / 'data' / 'raw'
 PROCESSED_DATA_DIR = BASE_DIR / 'data' / 'processed'
-CONFIG_FILES_DIR = BASE_DIR / 'config_files'
 MODELS_DIR = BASE_DIR / 'models'
-IPC_PATH = BASE_DIR / 'IPC'
+
 
 def csv_to_parquet(DIR, filename, filename_parquet, rewrite = False, chunksize = 100000):
+    '''
+    Converts csv to parquet in RAM-friendly way
+        Args :
+
+            DIR: directiry where .csv file is located
+            filename: name of csv file
+            filename_parquet: name of parquet file to save
+            rewrite: flag to rewrite existing parquet file
+            chunksize: chunk size for single write to parquet file
+
+    Saving parquet file in PROCESSED_DATA_DIR
+    '''
+
     csv_stream = pd.read_csv(DIR / filename, chunksize = chunksize)
     parquet_file = PROCESSED_DATA_DIR / filename_parquet
     if (PROCESSED_DATA_DIR / filename_parquet).exists() and rewrite is True:
