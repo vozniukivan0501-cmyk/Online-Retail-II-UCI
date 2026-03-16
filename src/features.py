@@ -39,7 +39,7 @@ def MarketDemandModel_data_transformation(df : pd.DataFrame , tick_size : int = 
 
         #Data-cleaning block to drop all invalid data with negative price, non-purchase data, etc
         df = df[(df['Quantity'] > 0) & (df['Description'] != 'None') & (df['Price'] >= 0)]
-        df = df[df['StockCode'].str[:-1] != 'C']
+        df = df[df['StockCode'].str.count(r'[C]') < 1]
         df = df[df['StockCode'].str.count(r'[a-zA-Z]') <= 1]
 
         df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'])
