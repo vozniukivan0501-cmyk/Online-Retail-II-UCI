@@ -65,7 +65,7 @@ if st.button('Generate Forecast', type='primary'):
 
         except requests.exceptions.ConnectionError:
             #Connection refused (Cloud Mode) -> Abandon API, run engine directly
-            st.toast("Cloud environment detected. Running engine directly")
+            st.info("Cloud environment detected. Running engine directly")
 
             try:
                 clean_date = api_date_str.split(' ')[0]
