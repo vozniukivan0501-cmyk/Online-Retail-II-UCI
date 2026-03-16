@@ -82,13 +82,14 @@ if st.button('Generate Forecast', type='primary'):
 
         if df is not None and not df.empty:
 
-            df = df.astype(str)
+            clean_df = pd.DataFrame(df.to_dict(orient='records'))
+
+            clean_df = clean_df.astype('object')
 
             required_cols = ['forecast_from', 'forecast_to', 'StockCode']
-            if all(col in df.columns for col in required_cols):
-                df.set_index(required_cols, inplace=True)
+            if all(col in clean_df.columns for col in required_cols):
+                clean_df.set_index(required_cols, inplace=True)
 
-
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(clean_df, use_container_width=True)
 
 
